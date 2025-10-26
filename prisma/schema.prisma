@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Cliente {
+  id_cliente      Int         @id @default(autoincrement())
+  nome_completo   String?     @db.VarChar(100)
+  cpf             String?     @unique @db.VarChar(14)
+  celular         String?     @db.VarChar(20)
+  email           String?     @unique @db.VarChar(100)
+  data_nascimento DateTime?   @db.Date
+  enderecos       Endereco[]
+  compras         Compra[]
+  
+  @@map("Cliente")
+}
+
+model Endereco {
+  id_endereco  Int      @id @default(autoincrement())
+  id_cliente   Int
+  logradouro   String?  @db.VarChar(150)
+  numero       String?  @db.VarChar(10)
+  complemento  String?  @db.VarChar(50)
+  bairro       String?  @db.VarChar(50)
+  cidade       String?  @db.VarChar(50)
+  estado       String?  @db.VarChar(2)
+  cep          String?  @db.VarChar(10)
+  cliente      Cliente  @relation(fields: [id_cliente], references: [id_cliente], onDelete: Cascade)
+  compras      Compra[]
+  
+  @@map("Endereco")
+}
+
+model Categoria {
+  id_categoria      Int             @id @default(autoincrement())
+  nome_categoria    String?         @db.VarChar(50)
+  subcategorias     Subcategoria[]
+  
+  @@map("Categoria")
+}
+
+model Subcategoria {
+  id_subcategoria   Int       @id @default(autoincrement())
+  id_categoria      Int
+  nome_subcategoria String?   @db.VarChar(50)
+  categoria         Categoria @relation(fields: [id_categoria], references: [id_categoria], onDelete: Cascade)
+  produtos          Produto[]
+  
+  @@map("Subcategoria")
+}
+
+model Produto {
+  id_produto          Int            @id @default(autoincrement())
+  modelo              String?        @db.VarChar(100)
+  fabricante          String?        @db.VarChar(50)
+  preco_base          Decimal?       @db.Decimal(10,2)
+  quantidade_disponivel Int?
+  id_subcategoria     Int
+  subcategoria        Subcategoria   @relation(fields: [id_subcategoria], references: [id_subcategoria], onDelete: Cascade)
+  numeros_serie       NumeroSerie[]
+  itens_compra        ItemCompra[]
+  
+  @@map("Produto")
+}
+
+model NumeroSerie {
+  id_numero_serie Int     @id @default(autoincrement())
+  id_produto      Int
+  numero_serie    String? @unique @db.VarChar(50)
+  produto         Produto  @relation(fields: [id_produto], references: [id_produto], onDelete: Cascade)
+  
+  @@map("NumeroSerie")
+}
+
+model Compra {
+  id_compra         Int           @id @default(autoincrement())
+  id_cliente        Int
+  data_hora         DateTime?     @default(now()) @db.DateTime(0)
+  desconto          Decimal?      @db.Decimal(10,2)
+  forma_pagamento   String?       @db.VarChar(20)
+  total             Decimal?      @db.Decimal(10,2)
+  id_endereco       Int
+  cliente           Cliente       @relation(fields: [id_cliente], references: [id_cliente], onDelete: Cascade)
+  endereco          Endereco      @relation(fields: [id_endereco], references: [id_endereco], onDelete: Cascade)
+  itens_compra      ItemCompra[]
+  
+  @@map("Compra")
+}
+
+model ItemCompra {
+  id_item_compra  Int      @id @default(autoincrement())
+  id_compra       Int
+  id_produto      Int
+  quantidade      Int?
+  preco_venda     Decimal? @db.Decimal(10,2)
+  compra          Compra   @relation(fields: [id_compra], references: [id_compra], onDelete: Cascade)
+  produto         Produto  @relation(fields: [id_produto], references: [id_produto])
+  
+  @@map("ItemCompra")
+}
